@@ -1,0 +1,13 @@
+{
+    "host": null,
+    "port": 8090,
+
+    "db": {
+        "dsl": "mongodb://localhost:27017/askd"
+    },
+
+    "api": {
+
+    }
+
+}
