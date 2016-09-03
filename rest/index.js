@@ -1,3 +1,4 @@
 module.exports = [
-    require('./questions')
+    require('./questions'),
+    require('./answers')
 ];

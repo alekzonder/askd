@@ -69,6 +69,20 @@ class Questions extends Abstract {
 
     }
 
+    getByIdActive(id) {
+
+        return new Promise((resolve, reject) => {
+            this._model().findOne({_id: id, deleted: false})
+                .then((doc) => {
+                    resolve(doc);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+
+    }
+
     find(filters, fields) {
 
         var chain = new Chain({

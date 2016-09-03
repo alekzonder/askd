@@ -10,16 +10,17 @@ class Questions extends Abstract {
         this._collectionName = 'questions';
 
         this._indexes = [
-            // {
-            //     fields: {
-            //         creationDate: -1
-            //     },
-            //     options: {
-            //         name: 'creationDate',
-            //         unique: false,
-            //         background: true
-            //     }
-            // }
+            {
+                fields: {
+                    deleted: 1,
+                    creationDate: -1
+                },
+                options: {
+                    name: 'deleted__creationDate',
+                    unique: false,
+                    background: true
+                }
+            }
         ];
     }
 

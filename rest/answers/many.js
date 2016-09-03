@@ -3,16 +3,17 @@ var _ = require('lodash');
 
 module.exports = {
 
-    resource: '/questions',
+    resource: '/answers',
 
-    title: 'find and create questions',
+    title: 'find and create answers',
 
     methods: {
         GET: {
-            title: 'find questions',
+            title: 'find answers',
 
             schema: {
                 query: {
+                    questionId: joi.string().required(),
                     limit: joi.number().default(10).min(0).max(100),
                     offset: joi.number().default(0).min(0).max(100)
                 }
@@ -24,18 +25,22 @@ module.exports = {
 
                 var filters = {};
 
-                var request = api.questions.find(filters);
+                if (req.query.questionId) {
+                    filters.questionId = req.query.questionId;
+                }
+
+                var request = api.answers.find(filters);
 
                 request.limit(req.query.limit).skip(req.query.offset);
 
-                request.sort({deleted: 1, creationDate: -1});
+                request.sort({creationDate: -1});
 
                 request.exec()
                     .then((result) => {
                         var docs = [];
 
                         for (var doc of result.docs) {
-                            docs.push(api.questions.clearSystemFields(doc));
+                            docs.push(api.answers.clearSystemFields(doc));
                         }
 
                         res.result(docs, {
@@ -49,7 +54,7 @@ module.exports = {
                     })
                     .catch((error) => {
                         var ec = {
-                            questions: api.questions.ErrorCodes
+                            answers: api.answers.ErrorCodes
                         };
 
                         if (!error.checkable) {
@@ -70,21 +75,28 @@ module.exports = {
             },
 
             preHook: function (method, di) {
-                method.schema.body = di.api.questions.getCreationSchemaForRestApi();
+                method.schema.body = di.api.answers.getCreationSchemaForRestApi();
             },
 
             callback: function (req, res) {
                 var logger = req.di.logger;
                 var api = req.di.api;
 
-
-                api.questions.create(req.body)
+                api.questions.getByIdActive(req.body.questionId)
                     .then((question) => {
-                        res.result(api.questions.clearSystemFields(question));
+                        if (!question) {
+                            throw api.questions.NotFoundError();
+                        }
+
+                        return api.answers.create(req.body);
+                    })
+                    .then((answer) => {
+                        res.result(api.answers.clearSystemFields(answer));
                     })
                     .catch((error) => {
                         var ec = {
-                            questions: api.questions.ErrorCodes
+                            questions: api.questions.ErrorCodes,
+                            answers: api.answers.ErrorCodes
                         };
 
                         if (!error.checkable) {
@@ -92,10 +104,13 @@ module.exports = {
                         }
 
                         error.checkChain(res.logServerError)
-                           .ifEntity(api.questions.entityName)
-                           .ifCode(ec.questions.INVALID_DATA, res.badRequest)
-                           .ifCode(ec.questions.ALREADY_EXISTS, res.badRequest)
+                           .ifEntity(api.answers.entityName)
+                           .ifCode(ec.answers.INVALID_DATA, res.badRequest)
+                           .ifCode(ec.answers.ALREADY_EXISTS, res.badRequest)
                            .end()
+                           .ifEntity(api.questions.entityName)
+                           .ifCode(ec.questions.NOT_FOUND, res.notFound)
+                            .end()
                            .check();
                     });
             }
