@@ -43,6 +43,7 @@ require(path.join(__dirname, '/init/config'))()
             } else {
                 req.di = di;
                 next();
+                return;
             }
         });
 

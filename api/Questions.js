@@ -136,7 +136,7 @@ class Questions extends Abstract {
                     resolve(doc);
                 })
                 .catch((error) => {
-                    if (error.name == 'ApiError' && error.code === ErrorCodes.INVALID_DATA) {
+                    if (error.name === 'ApiError' && error.code === ErrorCodes.INVALID_DATA) {
                         reject(
                             this.Error(error.message, error.code)
                                 .setList(error.list)
