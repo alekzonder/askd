@@ -30,22 +30,36 @@ module.exports = {
 
                 request.sort({deleted: 1, creationDate: -1});
 
-                request.exec()
-                    .then((result) => {
-                        var docs = [];
+                var docs = [], questions, ids = [], userIds = [];
 
-                        for (var doc of result.docs) {
+                request.exec()
+                    .then((_questions) => {
+                        questions = _questions;
+
+                        for (var doc of questions.docs) {
                             docs.push(api.questions.clearSystemFields(doc));
+                            ids.push(doc.id);
+                            userIds.push(doc.userId);
                         }
+
+                        return Promise.all([
+                            api.users.findByIds(userIds),
+                            api.answers.getCountByActiveQuestions(ids)
+                        ]);
+                    })
+                    .then((result) => {
 
                         res.result(docs, {
                             resultset: {
-                                count: result.docs.length,
-                                total: result.total,
+                                count: questions.docs.length,
+                                total: questions.total,
                                 limit: req.query.limit,
                                 offset: req.query.offset
-                            }
+                            },
+                            users: result[0],
+                            answerCounts: result[1]
                         });
+
                     })
                     .catch((error) => {
                         var ec = {

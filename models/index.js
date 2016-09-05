@@ -8,12 +8,14 @@ module.exports = (config, di) => {
 
         var M = {
             Questions: require('./Questions'),
-            Answers: require('./Answers')
+            Answers: require('./Answers'),
+            Users: require('./Users')
         };
 
         var models = {
             questions: new M.Questions(db),
-            answers: new M.Answers(db)
+            answers: new M.Answers(db),
+            users: new M.Users(db)
         };
 
         _.each(models, (model) => {

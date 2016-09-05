@@ -12,22 +12,21 @@ var apiError = require('mazaid-error/create')(ErrorCodes);
 
 var Chain = require('maf/Chain');
 
-class Answers extends Abstract {
+class Users extends Abstract {
 
     constructor(config, models, api) {
         super(models, api);
 
         this._config = config;
 
-        this.entityName = 'answer';
+        this.entityName = 'user';
 
         this.ErrorCodes = ErrorCodes;
 
         this._creationSchema = function() {
             return {
-                questionId: joi.string().guid().required(),
-                userId: joi.string().required(),
-                text: joi.string().required(),
+                login: joi.string().required(),
+                password: joi.string().required(),
                 creationDate: joi.number().min(0).required(),
                 modificationDate: joi.number().min(0).default(null).allow(null),
                 deleted: joi.boolean().default(false)
@@ -36,7 +35,9 @@ class Answers extends Abstract {
 
         this._modificationSchema = function() {
             return {
-                text: joi.string().required()
+                login: joi.string(),
+                password: joi.string(),
+                deleted: joi.boolean()
             };
         };
 
@@ -46,16 +47,12 @@ class Answers extends Abstract {
     }
 
     getCreationSchemaForRestApi() {
-        var schema = this._creationSchema();
-        var fields = ['questionId', 'text'];
-        var s = _.pick(schema, fields);
-        return s;
+        return _.pick(this._creationSchema(), ['login', 'password']);
     }
 
     getModifcationSchemaForRestApi() {
-        return this._modificationSchema();
+        return _.pick(this._modificationSchema(), ['login', 'password']);
     }
-
 
     getById(id) {
 
@@ -71,46 +68,49 @@ class Answers extends Abstract {
 
     }
 
-    getCountByActiveQuestions(questionIds) {
+    getByIdActive(id) {
 
         return new Promise((resolve, reject) => {
+            this._model().findOne({_id: id, deleted: false})
+                .then((doc) => {
+                    resolve(doc);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
 
-            var cursor = this._model().aggregate([
-                {
-                    '$match': {
-                        questionId: {
-                            '$in': questionIds
-                        },
-                        deleted: false
-                    }
-                },
-                {
-                    '$group': {
-                        _id: '$questionId',
-                        count: {$sum: 1}
-                    }
-                }
-            ]);
+    }
 
-            cursor.toArray(function (error, docs) {
-                if (error) {
-                    return reject(error);
-                }
+    findByIds(ids) {
 
-                if (!docs) {
+        return new Promise((resolve, reject) => {
+            this._model().find({
+                _id: {'$in': ids},
+                deleted: false
+            }, {id:1, login: 1})
+            .exec()
+            .then((result) => {
+
+                if (!result.docs) {
                     return resolve([]);
                 }
 
-                var result = {};
+                var users = {};
 
-                for (var doc of docs) {
-                    result[doc._id] = doc.count;
+                for (var doc of result.docs) {
+
+                    users[doc.id] = {
+                        login: doc.login
+                    };
+
                 }
 
-                resolve(result);
-
+                resolve(users);
+            })
+            .catch((error) => {
+                reject(error);
             });
-
         });
 
     }
@@ -154,7 +154,7 @@ class Answers extends Abstract {
             }
 
             // TODO
-            data.userId = 'e47f21aa-1357-48b3-93c6-595e6f3c42bd';
+            // data.userId = 'e47f21aa-1357-48b3-93c6-595e6f3c42bd';
 
             data.creationDate = this._time();
             data.modificationDate = null;
@@ -183,7 +183,7 @@ class Answers extends Abstract {
 
     createTest() {
         var data = {
-            questionId: this._generateUuid(),
+            title: 'test',
             text: 'test'
         };
 
@@ -308,8 +308,8 @@ class Answers extends Abstract {
      * @return {model}
      */
     _model() {
-        return this._models.answers;
+        return this._models.users;
     }
 }
 
-module.exports = Answers;
+module.exports = Users;
