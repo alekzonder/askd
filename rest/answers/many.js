@@ -35,21 +35,31 @@ module.exports = {
 
                 request.sort({creationDate: -1});
 
+                var docs = [], answers;
+
                 request.exec()
                     .then((result) => {
-                        var docs = [];
 
-                        for (var doc of result.docs) {
+                        answers = result;
+
+                        var userIds = [];
+
+                        for (var doc of answers.docs) {
                             docs.push(api.answers.clearSystemFields(doc));
+                            userIds.push(doc.userId);
                         }
 
+                        return api.users.findByIds(userIds);
+                    })
+                    .then((users) => {
                         res.result(docs, {
                             resultset: {
-                                count: result.docs.length,
-                                total: result.total,
+                                count: answers.docs.length,
+                                total: answers.total,
                                 limit: req.query.limit,
                                 offset: req.query.offset
-                            }
+                            },
+                            users: users
                         });
                     })
                     .catch((error) => {

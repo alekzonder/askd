@@ -24,13 +24,36 @@ module.exports = {
                 var logger = req.di.logger;
                 var api = req.di.api;
 
+                var question;
+
                 api.questions.getById(req.params.id)
-                    .then((question) => {
+                    .then((_question) => {
+                        question = _question;
+
                         if (!question) {
                             throw api.questions.NotFoundError();
                         }
 
-                        res.result(api.questions.clearSystemFields(question));
+                        return Promise.all([
+                            api.answers.getCountByActiveQuestions([question.id]),
+                            api.users.getById(question.userId)
+                        ]);
+                    })
+                    .then((result) => {
+                        var user = result[1];
+
+                        var users = {};
+
+                        users[user.id] = {
+                            login: user.login
+                        };
+
+                        // var userId = user['id'];
+
+                        res.result(api.questions.clearSystemFields(question), {
+                            answerCounts: result[0],
+                            users: users
+                        });
                     })
                     .catch((error) => {
                         var ec = {
