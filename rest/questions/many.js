@@ -22,7 +22,9 @@ module.exports = {
                 var logger = req.di.logger;
                 var api = req.di.api;
 
-                var filters = {};
+                var filters = {
+                    deleted: false
+                };
 
                 var request = api.questions.find(filters);
 

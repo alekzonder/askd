@@ -15,7 +15,8 @@ module.exports = {
                 query: {
                     questionId: joi.string().required(),
                     limit: joi.number().default(10).min(0).max(100),
-                    offset: joi.number().default(0).min(0).max(100)
+                    offset: joi.number().default(0).min(0).max(100),
+                    sort: joi.string().valid('creationDate', '-creationDate').default('creationDate')
                 }
             },
 
@@ -33,7 +34,11 @@ module.exports = {
 
                 request.limit(req.query.limit).skip(req.query.offset);
 
-                request.sort({creationDate: -1});
+                if (req.query.sort == 'creationDate') {
+                    request.sort({creationDate: 1});
+                } else if (req.query.sort == '-creationDate') {
+                    request.sort({creationDate: -1});
+                }
 
                 var docs = [], answers;
 
